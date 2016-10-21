@@ -1,4 +1,8 @@
 /* My Mind web app: all source files combined. */
+/**
+ * bind 不支持IE8及以下版本
+ * 绑定函数
+ */
 if (!Function.prototype.bind) {
 	Function.prototype.bind = function(thisObj) {
 		var fn = this;
@@ -9,6 +13,7 @@ if (!Function.prototype.bind) {
 	}
 };
 
+/*定义一个 My Mind */
 var MM = {
 	_subscribers: {},
 	
@@ -41,6 +46,7 @@ var MM = {
 		return str;
 	}
 };
+
 /*
 	Any copyright is dedicated to the Public Domain.
 	http://creativecommons.org/publicdomain/zero/1.0/
@@ -298,6 +304,12 @@ MM.Item = function() {
 	this._color = null;
 	this._value = null;
 	this._status = null;
+	/* --- Dary.Deng by 2016-08-31 --- */
+	this._peopleDay = null;
+	this._pic = null;
+	this._startTime = null;
+	this._endTime = null;
+	/* --- End ---*/
 	this._side = null; /* side preference */
 	this._id = MM.generateId();
 	this._oldText = "";
@@ -315,7 +327,8 @@ MM.Item = function() {
 		text: document.createElement("div"),
 		children: document.createElement("ul"),
 		toggle: document.createElement("div"),
-		canvas: document.createElement("canvas")
+		canvas: document.createElement("canvas"),
+		//peopleDay: document.createElement("span")
 	}
 	this._dom.node.classList.add("item");
 	this._dom.content.classList.add("content");
@@ -328,6 +341,9 @@ MM.Item = function() {
 	this._dom.content.appendChild(this._dom.text); /* status+value are appended in layout */
 	this._dom.node.appendChild(this._dom.canvas);
 	this._dom.node.appendChild(this._dom.content);
+	/*--- Dary.Deng ---*/
+	//this._dom.peopleDay.
+	/*--- End ---*/
 	/* toggle+children are appended when children exist */
 
 	this._dom.toggle.addEventListener("click", this);
@@ -363,6 +379,16 @@ MM.Item.prototype.toJSON = function() {
 	if (this._layout) { data.layout = this._layout.id; }
 	if (!this._autoShape) { data.shape = this._shape.id; }
 	if (this._collapsed) { data.collapsed = 1; }
+	/* --- Dary.Deng by 2016-08-31 --- */
+	if (this._peopleDay ) {
+		data.peopleDay = this._peopleDay;
+	}
+	if (this._pic ) {
+		data.pic = this._pic;
+	}
+	if (this._startTime ) { data.startTime = this._startTime; }
+	if (this._endTime ) { data.endTime = this._endTime; }
+	/* --- End ---*/
 	if (this._children.length) {
 		data.children = this._children.map(function(child) { return child.toJSON(); });
 	}
@@ -386,6 +412,14 @@ MM.Item.prototype.fromJSON = function(data) {
 	if (data.collapsed) { this.collapse(); }
 	if (data.layout) { this._layout = MM.Layout.getById(data.layout); }
 	if (data.shape) { this.setShape(MM.Shape.getById(data.shape)); }
+
+	/* Dary.Deng 2016-10-14 */
+	if(data.pic){ this._pic = data.pic; }
+	if(data.peopleDay){ this._peopleDay = data.peopleDay; }
+	if(data.startTime){ this._startTime = data.startTime; }
+	if(data.endTime){ this._endTime = data.endTime; }
+
+	/* End */
 
 	(data.children || []).forEach(function(child) {
 		this.insertChild(MM.Item.fromJSON(child));
@@ -493,11 +527,14 @@ MM.Item.prototype.update = function(doNotRecurse) {
 	
 	this._updateStatus();
 	this._updateValue();
-
+	/* --- Dary.Deng */
+	//this.getPeopleDay().update(this);
+	/* --- End --- */
 	this._dom.node.classList[this._collapsed ? "add" : "remove"]("collapsed");
 
 	this.getLayout().update(this);
 	this.getShape().update(this);
+
 	if (!this.isRoot() && !doNotRecurse) { this._parent.update(); }
 
 	return this;
@@ -562,7 +599,40 @@ MM.Item.prototype.setStatus = function(status) {
 MM.Item.prototype.getStatus = function() {
 	return this._status;
 }
+/* --- Dary.Deng by 2016-08-31 ---*/
+MM.Item.prototype.setPeopleDay = function(peopleDay) {
+	this._peopleDay = peopleDay;
+	return this.update();
+}
 
+MM.Item.prototype.getPeopleDay = function() {
+	return this._peopleDay;
+}
+MM.Item.prototype.setPic = function(pic) {
+	this._pic = pic;
+	return this.update();
+}
+
+MM.Item.prototype.getPic = function() {
+	return this._pic;
+}
+MM.Item.prototype.setStartTime = function(startTime) {
+	this._startTime = startTime;
+	return this.update();
+}
+
+MM.Item.prototype.getStartTime = function() {
+	return this._startTime;
+}
+MM.Item.prototype.setEndTime = function(endTime) {
+	this._endTime = endTime;
+	return this.update();
+}
+
+MM.Item.prototype.getEndTime = function() {
+	return this._endTime;
+}
+/* --- End ---*/
 MM.Item.prototype.getComputedStatus = function() {
 	return this._computed.status;
 }
@@ -791,7 +861,12 @@ MM.Item.prototype._updateStatus = function() {
 		break;
 	}
 }
+/*--- Dary.Deng --- */
+MM.Item.prototype._updatePeopleDay = function() {
+	//this._peopleDay
 
+}
+/* --- End ----*/
 MM.Item.prototype._updateValue = function() {
 	this._dom.value.style.display = "";
 
@@ -1396,6 +1471,56 @@ MM.Action.SetStatus.prototype.perform = function() {
 MM.Action.SetStatus.prototype.undo = function() {
 	this._item.setStatus(this._oldStatus);
 }
+/*--- Dary.Deng by 2016-09-01 ---*/
+MM.Action.SetPeopleDay = function(item, peopleDay) {
+	this._item = item;
+	this._peopleDay = peopleDay;
+	this._oldpeopleDay = item.getPeopleDay();
+}
+MM.Action.SetPeopleDay.prototype = Object.create(MM.Action.prototype);
+MM.Action.SetPeopleDay.prototype.perform = function() {
+	this._item.setPeopleDay(this._peopleDay);
+}
+MM.Action.SetPeopleDay.prototype.undo = function() {
+	this._item.setPeopleDay(this._oldpeopleDay);
+}
+MM.Action.SetPic = function(item, pic) {
+	this._item = item;
+	this._pic = pic;
+	this._oldpic = item.getPic();
+}
+MM.Action.SetPic.prototype = Object.create(MM.Action.prototype);
+MM.Action.SetPic.prototype.perform = function() {
+	this._item.setPic(this._pic);
+}
+MM.Action.SetPic.prototype.undo = function() {
+	this._item.setPic(this._oldpic);
+}
+MM.Action.SetStartTime = function(item, startTime) {
+	this._item = item;
+	this._startTime = startTime;
+	this._oldstartTime = item.getStartTime();
+}
+MM.Action.SetStartTime.prototype = Object.create(MM.Action.prototype);
+MM.Action.SetStartTime.prototype.perform = function() {
+	this._item.setStartTime(this._startTime);
+}
+MM.Action.SetStartTime.prototype.undo = function() {
+	this._item.setStartTime(this._oldstartTime);
+}
+MM.Action.SetEndTime = function(item, endTime) {
+	this._item = item;
+	this._endTime = endTime;
+	this._oldendTime = item.getEndTime();
+}
+MM.Action.SetEndTime.prototype = Object.create(MM.Action.prototype);
+MM.Action.SetEndTime.prototype.perform = function() {
+	this._item.setEndTime(this._endTime);
+}
+MM.Action.SetEndTime.prototype.undo = function() {
+	this._item.setEndTime(this._oldendTime);
+}
+/* --- End ---*/
 
 MM.Action.SetSide = function(item, side) {
 	this._item = item;
@@ -1411,6 +1536,8 @@ MM.Action.SetStatus.prototype.undo = function() {
 	this._item.setSide(this._oldSide);
 	this._item.getMap().update();
 }
+
+
 MM.Clipboard = {
 	_item: null,
 	_mode: "",
@@ -1537,6 +1664,9 @@ MM.Clipboard._endCut = function() {
 	this._item = null;
 	this._mode = "";
 }
+/**
+ *  右键菜单
+ **/
 MM.Menu = {
 	_dom: {},
 	_port: null,
@@ -2262,6 +2392,7 @@ MM.Layout.Graph.update = function(item) {
 
 
 /**
+ * 根据子节点的数量调整布局
  * Generic graph child layout routine. Updates item's orthogonal size according to the sum of its children.
  */
 MM.Layout.Graph._layoutItem = function(item, rankDirection) {
@@ -2339,7 +2470,7 @@ MM.Layout.Graph._drawLinesVertical = function(item, side) {
 	this._anchorCanvas(item);
 	this._drawVerticalConnectors(item, side, item.getChildren());
 }
-
+/*  绘制水平连接器 */
 MM.Layout.Graph._drawHorizontalConnectors = function(item, side, children) {
 	if (children.length == 0) { return; }
 
@@ -3239,8 +3370,13 @@ MM.Backend.WebDAV.load = function(url) {
 MM.Backend.WebDAV._request = function(method, url, data) {
 	var xhr = new XMLHttpRequest();
 	xhr.open(method, url, true);
+	//TODO  dd
+	// if(method == 'get'){
+	// 	xhr.setRequestHeader("Access-Control-Allow-Origin","http://localhost:8080");
+	// }
 	xhr.withCredentials = true;
 
+	// xhr.setRequestHeader("Access-Control-Allow-Credentials",true);
 	var promise = new Promise();
 	
 	Promise.send(xhr, data).then(
@@ -3295,7 +3431,10 @@ MM.Backend.File.save = function(data, name) {
 	var promise = new Promise().fulfill();
 	return promise;
 }
-
+/**
+ * 加载文件 ，读取配置信息
+ * @returns {Promise}
+ */
 MM.Backend.File.load = function() {
 	var promise = new Promise();
 
@@ -3705,7 +3844,13 @@ MM.UI = function() {
 	this._color = new MM.UI.Color();
 	this._value = new MM.UI.Value();
 	this._status = new MM.UI.Status();
-		
+	/* --- Dary.Deng by 2016-08-31 --- */
+
+	this._peopleDay = new MM.UI.PeopleDay();
+	this._pic = new MM.UI.Pic();
+	this._startTime = new MM.UI.StartTime();
+	this._endTime = new MM.UI.EndTime();
+	/* --- end --- */
 	MM.subscribe("item-select", this);
 	MM.subscribe("item-change", this);
 
@@ -3730,7 +3875,7 @@ MM.UI.prototype.handleMessage = function(message, publisher) {
 MM.UI.prototype.handleEvent = function(e) {
 	switch (e.type) {
 		case "click":
-			if (e.target.nodeName.toLowerCase() != "select") { MM.Clipboard.focus(); } /* focus the clipboard (2c) */
+			if ( !(e.target.nodeName.toLowerCase() == "select" || e.target.nodeName.toLowerCase() == "input") ) { MM.Clipboard.focus(); } /* focus the clipboard (2c) */
 
 			if (e.target == this._toggle) {
 				this.toggle();
@@ -3769,6 +3914,12 @@ MM.UI.prototype._update = function() {
 	this._shape.update();
 	this._value.update();
 	this._status.update();
+	/*--- Dary.Deng by 2016-08-31 ---*/
+	this._peopleDay.update();
+	this._pic.update();
+	this._startTime.update();
+	this._endTime.update();
+	/*--- end ---*/
 }
 MM.UI.Layout = function() {
 	this._select = document.querySelector("#layout");
@@ -3874,6 +4025,68 @@ MM.UI.Status.prototype.handleEvent = function(e) {
 	var action = new MM.Action.SetStatus(MM.App.current, this._select.value || null);
 	MM.App.action(action);
 }
+/**
+ * 2016-08-31
+ * Dary.Deng
+ */
+MM.UI.PeopleDay = function() {
+	this._select = document.querySelector("#peopleDay");
+	this._select.addEventListener("change", this);
+}
+
+MM.UI.PeopleDay.prototype.update = function() {
+	this._select.value = MM.App.current.getPeopleDay() || "";
+}
+
+MM.UI.PeopleDay.prototype.handleEvent = function(e) {
+	var action = new MM.Action.SetPeopleDay(MM.App.current, this._select.value || null);
+	MM.App.action(action);
+}
+
+MM.UI.Pic = function() {
+	this._select = document.querySelector("#responsible");
+	this._select.addEventListener("change", this);
+}
+
+MM.UI.Pic.prototype.update = function() {
+	this._select.value = MM.App.current.getPic() || "";
+}
+
+MM.UI.Pic.prototype.handleEvent = function(e) {
+	var action = new MM.Action.SetPic(MM.App.current, this._select.value || null);
+	MM.App.action(action);
+}
+
+
+MM.UI.StartTime = function() {
+	this._select = document.querySelector("#beginDate");
+	this._select.addEventListener("change", this);
+}
+
+MM.UI.StartTime.prototype.update = function() {
+	this._select.value = MM.App.current.getStartTime() || "";
+}
+
+MM.UI.StartTime.prototype.handleEvent = function(e) {
+	var action = new MM.Action.SetStartTime(MM.App.current, this._select.value || null);
+	MM.App.action(action);
+}
+
+
+MM.UI.EndTime = function() {
+	this._select = document.querySelector("#endDate");
+	this._select.addEventListener("change", this);
+}
+
+MM.UI.EndTime.prototype.update = function() {
+	this._select.value = MM.App.current.getEndTime() || "";
+}
+
+MM.UI.EndTime.prototype.handleEvent = function(e) {
+	var action = new MM.Action.SetEndTime(MM.App.current, this._select.value || null);
+	MM.App.action(action);
+}
+/* --- end ---*/
 MM.UI.Color = function() {
 	this._node = document.querySelector("#color");
 	this._node.addEventListener("click", this);
@@ -5173,6 +5386,7 @@ MM.App = {
 		MM.Menu.init(this._port);
 		MM.Mouse.init(this._port);
 		MM.Clipboard.init();
+
 
 		window.addEventListener("resize", this);
 		window.addEventListener("beforeunload", this);
