@@ -1,0 +1,75 @@
+{
+  "root": {
+    "id": "ooohewoc",
+    "text": "Mind Test<br>",
+    "layout": "map",
+    "children": [
+      {
+        "id": "ppqaywae",
+        "text": "test1<br>",
+        "side": "right",
+        "color": "#33e",
+        "value": 1,
+        "shape": "box",
+        "children": [
+          {
+            "id": "fgiodcwj",
+            "text": "test 11<br>",
+            "color": "#3e3",
+            "value": 11,
+            "children": [
+              {
+                "id": "yntzxler",
+                "text": "test111",
+                "value": 111
+              },
+              {
+                "id": "xnfmuptx",
+                "text": "test112",
+                "layout": "tree-right"
+              },
+              {
+                "id": "eswbbthr",
+                "text": "test12",
+                "value": 113
+              }
+            ]
+          },
+          {
+            "id": "nefezjte",
+            "text": "test12",
+            "value": 12
+          }
+        ]
+      },
+      {
+        "id": "uugkkzxl",
+        "text": "test2",
+        "side": "left",
+        "children": [
+          {
+            "id": "wigcopwu",
+            "text": "test21"
+          }
+        ]
+      },
+      {
+        "id": "mdfanviy",
+        "text": "test3",
+        "side": "right",
+        "color": "#e33",
+        "value": 3,
+        "children": [
+          {
+            "id": "orrgvwof",
+            "text": "test31"
+          },
+          {
+            "id": "liwyephn",
+            "text": "test32"
+          }
+        ]
+      }
+    ]
+  }
+}
